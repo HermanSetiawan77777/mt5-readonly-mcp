@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }}, fake MetaTrader5)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e . pytest ruff
+      - run: ruff check .
+      - run: pytest -q
+
+  windows-smoke:
+    name: Windows smoke test (real MetaTrader5 package)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install .
+      - name: Server imports and lists its tools
+        run: python -c "import asyncio, mt5_readonly_mcp.server as s; print(sorted(t.name for t in asyncio.run(s.server.list_tools())))"
+      - name: Trading functions are disabled on the real package
+        run: python -c "import MetaTrader5 as mt5, mt5_readonly_mcp.guard as g; assert mt5.order_send is g._blocked and mt5.order_check is g._blocked; print('blocked')"
+      - name: Fails closed without configuration
+        shell: bash
+        run: |
+          set +e
+          out=$(mt5-readonly-mcp --check); code=$?
+          echo "$out"
+          test "$code" -eq 1 && echo "$out" | grep -q "MT5_TERMINAL_PATH is not set"

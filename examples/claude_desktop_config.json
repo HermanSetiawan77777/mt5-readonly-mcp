@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "mt5-readonly": {
+      "command": "uv",
+      "args": ["--directory", "C:\\Tools\\mt5-readonly-mcp", "run", "mt5-readonly-mcp"],
+      "env": {
+        "MT5_TERMINAL_PATH": "C:\\MT5-ReadOnly\\terminal64.exe",
+        "MT5_EXPORT_DIR": "C:\\Users\\you\\mt5-exports"
+      }
+    }
+  }
+}
